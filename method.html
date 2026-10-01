@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to test an agent boundary</title>
+<meta name="description" content="Crash fuzzing produced zero crashes on a well-tested agent command parser. The bug was what the parser decided vs what the shell did — so the oracle has to be differential.">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 44rem; margin: 4rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+  h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+  h2 { font-size: 1.15rem; margin-top: 2.4rem; }
+  p.sub { color: #666; margin-top: 0; }
+  code { background: rgba(127,127,127,.14); padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  pre { background: rgba(127,127,127,.1); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  a { color: #0969da; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); color: #666; font-size: .9rem; }
+</style></head><body>
+
+<h1>How to test an agent boundary</h1>
+<p class="sub">Three differentials, one A/B rule, and the control key I forgot twice.</p>
+
+<p>
+An agent boundary is the thing that decides what runs: the approval/permission layer, the sandbox,
+and the configuration the agent reads from the directory it was pointed at. All three fail in the
+same way — <strong>the component that enforces the boundary runs in the environment it polices, and
+takes its parameters from untrusted input.</strong>
+</p>
+
+<h2>Crash fuzzing is the wrong tool here</h2>
+<p>
+On a well-tested command parser, 19.5M and 1.6M libFuzzer executions produced <strong>zero
+crashes</strong>. The parser was fine. The bug was downstream: what the parser decided vs. what the
+shell did. A crash oracle cannot see that, because nothing crashes — the command just means
+something other than what the permission layer thought.
+</p>
+<p>So the oracle has to be <em>differential</em>.</p>
+
+<h2>Three differentials</h2>
+<ol>
+  <li><strong>Belief vs. reality (the shell).</strong> Build a fake <code>PATH</code> where every
+      leaf command is a logger and wrappers (<code>bash</code>, <code>env</code>, <code>find</code>,
+      <code>xargs</code>, <code>script</code>, <code>timeout</code>…) exec the real binary with
+      <code>PATH</code> still pointed at the stubs. You get the true execution chain, not the first
+      token. Nothing destructive ever runs.</li>
+  <li><strong>What the vendor pinned vs. what git still executes.</strong> Reproduce the vendor's
+      own arguments and environment — from source, or from the strings in a shipped binary — then
+      run the commands they actually issue, inside a repo carrying a marker program.</li>
+  <li><strong>What the repository gets to say.</strong> Walk the agent's source for the config files
+      it reads from the workspace; for each, does this let the repository choose an executable? Then
+      ask whether the product has a workspace-trust concept at all.</li>
+</ol>
+
+<h2>The A/B rule</h2>
+<p>
+Every finding is an <strong>A/B pair</strong>: identical payload, one variable different — the
+suspected evasion. Same repo, same argv, with and without the sink pinned. Anything weaker gets
+triaged down, because &ldquo;it executed something&rdquo; is not a finding; &ldquo;it executed
+something <em>because of this one difference</em>&rdquo; is.
+</p>
+
+<h2>The control key (the mistake I made twice)</h2>
+<p>
+A sink that does not fire is <strong>only</strong> meaningful if a pinned sink also failed to fire in
+the same run. My first two probes reported false negatives because I checked the exotic sink and
+forgot the control: the marker never ran at all — I had broken the fixture, not found a result.
+</p>
+<p>Every run now carries <code>reference: everything pinned</code>. If that profile fires, the run is
+invalid.</p>
+
+<h2>Why this generalises</h2>
+<p>The three differentials are the same shape: two things that should agree, one under the attacker's
+influence.</p>
+<ul>
+  <li>approval layer says &ldquo;safe&rdquo; / shell does something else</li>
+  <li>permission grant computed from a path the attacker influences (patch target, workdir, symlink)</li>
+  <li>configuration the agent reads comes from the repository</li>
+</ul>
+<p>
+If you build or audit an agent, the question for each component is one line: <strong>where does this
+take its parameters from, and who controls that?</strong>
+</p>
+
+<h2>Tools</h2>
+<ul>
+  <li><a href="https://github.com/DeviosLang/agent-boundary-scan">agent-boundary-scan</a> —
+      repository side, 29 rules, CI gate</li>
+  <li>agent-boundary-diff — the three differentials above, vendor-agnostic (pending publication)</li>
+</ul>
+
+<footer><a href="/">Home</a> · <a href="/checklist.html">Checklist</a> ·
+<a href="/mcp-ecosystem.html">MCP measurement</a> · <a href="/services.html">Review</a></footer>
+</body></html>
