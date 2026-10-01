@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A checklist for running AI coding agents on code you did not write</title>
+<meta name="description" content="Ten concrete checks before you point an AI coding agent at a repository you did not write, and before you mount an MCP server.">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 44rem; margin: 4rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+  h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+  h2 { font-size: 1.15rem; margin-top: 2.4rem; }
+  p.sub { color: #666; margin-top: 0; }
+  code { background: rgba(127,127,127,.14); padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  pre { background: rgba(127,127,127,.1); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  a { color: #0969da; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); color: #666; font-size: .9rem; }
+</style></head><body>
+
+<h1>A checklist for running AI coding agents on code you did not write</h1>
+<p class="sub">Agents trust the directory you point them at. That is the whole problem — and the whole fix.</p>
+
+<p>
+Decide what the directory is allowed to say <em>before</em> the agent reads it. None of this depends
+on a vendor patch, and none of it names an unpatched product.
+</p>
+
+<h2>Before you open the folder</h2>
+<ol>
+  <li><strong>Run the scanner.</strong> <code>pip install agent-boundary-scan &amp;&amp; abs ./that-repo</code>
+      — git config sinks, filter drivers, repo-declared MCP servers, agent hooks,
+      <code>GIT_*</code> env channels, devcontainer lifecycle commands, escaping symlinks.</li>
+  <li><strong>Read the local config yourself</strong> — the part <code>git clone</code> does not carry:
+      <code>git -C ./that-repo config --local --list</code>. Anything under
+      <code>core.fsmonitor</code>, <code>core.hooksPath</code>, <code>core.pager</code>,
+      <code>core.editor</code>, <code>core.sshCommand</code>, <code>diff.external</code>,
+      <code>filter.*</code>, <code>protocol.*</code> is a program the repository chose.</li>
+  <li><strong>Look at <code>.gitattributes</code>.</strong> <code>filter=&lt;name&gt;</code> and
+      <code>diff=&lt;name&gt;</code> name drivers whose program comes from that config. It is
+      content; it does not need to be committed to apply.</li>
+  <li><strong>Look in <code>.git/hooks</code>, and at <code>core.hooksPath</code>.</strong> Hooks
+      inside the repository are ordinary files git will execute.</li>
+</ol>
+
+<h2>Before you mount an MCP server</h2>
+<ol start="5">
+  <li><strong>Read the config, then the source.</strong>
+      <code>mss ~/.config/claude</code> and <code>mss ./some-server --source-only</code>.</li>
+  <li><strong>Change the parts you can change</strong>: pin the package version (drop
+      <code>npx -y</code>), point path arguments at one project directory instead of <code>/</code>,
+      drop <code>--privileged</code> and <code>docker.sock</code>, use https, keep credentials out of
+      a file that syncs.</li>
+</ol>
+
+<h2>For a team</h2>
+<ol start="7">
+  <li><strong>Forbid repository-declared servers and hooks by policy</strong>: no
+      <code>.mcp.json</code> in a repo, no <code>.claude/settings.json</code> with hooks, no
+      <code>.aider.conf.yml</code> with <code>lint-cmd</code>, no unreviewed
+      <code>.devcontainer</code> lifecycle command.</li>
+  <li><strong>Put both scanners in CI</strong>: <code>abs . --fail-on high</code>,
+      <code>mss . --fail-on high</code>. Fast, offline, no credentials.</li>
+  <li><strong>Give the agent less</strong>: read-only checkout, its own git identity, no ambient
+      cloud tokens, a directory it cannot escape. The interesting failures happen before the first
+      prompt — containment has to be in place before it starts.</li>
+  <li><strong>Contain the first look.</strong> A container, a VM, or a throwaway clone is cheaper
+      than the argument about what ran.</li>
+</ol>
+
+<h2>What this assumes</h2>
+<p>
+That you will sometimes be handed a repository you did not write: a template, an archive, a
+customer's tree, a shared folder, a PR checkout. In those cases the repository's
+<em>configuration</em> is input — and everything above is about not treating input as instruction.
+</p>
+
+<footer><a href="/">Home</a> ·
+<a href="https://github.com/DeviosLang/agent-boundary-scan">agent-boundary-scan</a> ·
+<a href="https://github.com/DeviosLang/mcp-surface-scan">mcp-surface-scan</a></footer>
+</body></html>
