@@ -74,6 +74,27 @@ That is not a criticism — terminal and filesystem access <em>are</em> the valu
 the tradeoff is not shown anywhere. The config says <code>"command": "npx"</code>; nothing in that
 line tells you that you just handed over your shell.</p>
 
+<h2>The opt-in problem</h2>
+
+<p>
+Capability-level authorisation is not impossible — three servers here show it working:
+</p>
+<ul>
+  <li><strong>Playwright MCP</strong> blocks navigation to <code>file://</code> and restricts file
+      access to the workspace root by default; you have to pass
+      <code>--allow-unrestricted-file-access</code> to widen it. Its docs also say plainly that
+      <code>--allowed-origins</code> &ldquo;does not serve as a security boundary&rdquo; — which is
+      more honest than most.</li>
+  <li><strong>mcp-server-kubernetes</strong> ships a <code>kubernetes-readonly</code> mode.</li>
+  <li>and outside MCP, the pattern that actually closes the git class: run the tool against a
+      <em>gitdir you control</em> (Amazon Q CLI and Roo Code do this for their checkpoint work), so
+      repository configuration is never consulted at all.</li>
+</ul>
+<p>
+All three are <strong>opt-in or opt-out, never the default</strong>. That is the whole gap: the
+mechanisms exist, the defaults do not use them.
+</p>
+
 <h2>What to do with this</h2>
 <ul>
   <li>Make the capability surface visible <em>before</em> mounting (that is what <code>mss</code> does).</li>
