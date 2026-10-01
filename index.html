@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeviosLang — AI coding agent boundary security</title>
+<meta name="description" content="Security research on the boundaries of AI coding agents: the sandbox, the approval gate, the tool call, and the configuration a repository is allowed to hand to a program that runs on your machine.">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 44rem; margin: 4rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+  h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+  h2 { font-size: 1.15rem; margin-top: 2.4rem; }
+  p.sub { color: #666; margin-top: 0; }
+  code { background: rgba(127,127,127,.14); padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  pre { background: rgba(127,127,127,.1); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  a { color: #0969da; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); color: #666; font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<h1>DeviosLang</h1>
+<p class="sub">Security research on the boundaries of AI coding agents.</p>
+
+<p>
+Every serious AI-agent escape of 2026 had the same shape: <strong>the agent trusted something the
+repository supplied</strong>. Not a model bug — a <em>boundary</em> bug. The component that enforces
+the boundary runs in the environment it polices, and takes its parameters from untrusted input: a
+repository, an issue, a patch, a tool result.
+</p>
+
+<h2>Current focus</h2>
+<ul>
+  <li><strong>Repository-controlled execution surfaces in git</strong> — which git operations a
+      coding agent performs on its own, and which of git's execution sinks survive the vendor's
+      hardening.</li>
+  <li><strong>Agent configuration surfaces</strong> — MCP server declarations, hooks, permission
+      files, environment channels.</li>
+  <li><strong>Differential testing of agent boundaries</strong> — what the approval layer believes
+      will run vs. what the shell actually runs.</li>
+</ul>
+
+<h2>Open source</h2>
+<p>
+<a href="https://github.com/DeviosLang/agent-boundary-scan"><strong>agent-boundary-scan</strong>
+(<code>abs</code>)</a> — scan a repository for the places where an AI coding agent gets hijacked:
+git config sinks, filter drivers, repo-declared MCP servers, agent hooks, <code>GIT_*</code> env
+channels, devcontainer lifecycle commands, escaping symlinks. CLI, SARIF, CI gate.
+</p>
+<pre>pip install agent-boundary-scan
+abs .                     # text report
+abs . --format sarif      # GitHub code scanning
+abs . --fail-on high      # CI gate</pre>
+
+<h2>Method notes</h2>
+<ul>
+  <li>Every finding is reported with an <strong>A/B pair</strong>: identical payload, only the
+      suspected evasion differs. Anything weaker gets triaged down.</li>
+  <li>Crash fuzzing alone is not enough on a hardened parser; the differential oracle is what
+      surfaces real issues.</li>
+  <li>A sink that "does not fire" is only meaningful if a pinned sink <em>also</em> failed to fire
+      in the same run.</li>
+</ul>
+
+<h2>Writing</h2>
+<p>
+A write-up covering twelve coding agents — reproducing each vendor's git hardening exactly and
+measuring which execution sinks still fire — is under coordinated disclosure and will appear here
+once the vendors have responded.
+</p>
+
+<h2>Contact</h2>
+<p>
+Vendor-side boundary reviews (git sink coverage, approval-parser differentials, MCP and config
+surfaces) and team training on using coding agents safely: open an issue on
+<a href="https://github.com/DeviosLang/agent-boundary-scan">the repo</a>, or reach out — first
+contact costs nothing.
+</p>
+
+<footer>
+<a href="https://github.com/DeviosLang">GitHub</a> ·
+Findings are reported privately to vendors and published after they respond.
+</footer>
+
+</body>
+</html>
