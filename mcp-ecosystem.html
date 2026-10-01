@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nine popular MCP servers, and what they can reach</title>
+<title>Fifteen popular MCP servers, and what they can reach</title>
 <meta name="description" content="I scanned the capability surface of nine popular MCP servers as published on npm. Seven of nine read credentials from the environment; MCP grants capabilities per server, not per capability.">
 <style>
   :root { color-scheme: light dark; }
@@ -20,9 +20,9 @@
   footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); font-size: .9rem; }
 </style></head><body>
 
-<h1>Nine popular MCP servers, and what they can reach</h1>
+<h1>Fifteen popular MCP servers, and what they can reach</h1>
 <p class="sub">Measured with <a href="https://github.com/DeviosLang/mcp-surface-scan">mcp-surface-scan</a>,
-against the npm tarballs people actually install. 1 October 2026.</p>
+against the npm tarballs people actually install. Updated 1 October 2026.</p>
 
 <p>
 Every MCP server runs with your privileges. The thing that declares it is one JSON blob: a package
@@ -31,27 +31,41 @@ arguments. So I read it mechanically — and then read the code behind it.
 </p>
 
 <table>
-<tr><th>server</th><th>run commands</th><th>write files</th><th>read files</th><th>network out</th><th>env credentials</th><th>listens</th></tr>
-<tr><td>desktop-commander 0.2.52</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
-<tr><td>server-filesystem</td><td></td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr>
-<tr><td>server-memory</td><td></td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td></tr>
-<tr><td>server-everything</td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-<tr><td>server-github</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
-<tr><td>server-slack</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
-<tr><td>server-brave-search</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
-<tr><td>server-puppeteer</td><td></td><td></td><td></td><td></td><td>✓</td><td></td></tr>
+<tr><th>server</th><th>run<br>commands</th><th>write<br>files</th><th>read<br>files</th><th>network<br>out</th><th>env<br>creds</th><th>listens</th><th>SQL</th></tr>
+<tr><td>desktop-commander</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>mcp-server-kubernetes</td><td>✓</td><td>✓</td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>firecrawl-mcp</td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>server-everything</td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>server-filesystem</td><td></td><td>✓</td><td>✓</td><td></td><td></td><td></td><td></td></tr>
+<tr><td>server-memory</td><td></td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-gdrive</td><td></td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-github</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-slack</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-brave-search</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-google-maps</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-puppeteer</td><td></td><td></td><td></td><td></td><td>✓</td><td></td><td></td></tr>
+<tr><td>server-postgres</td><td></td><td></td><td></td><td></td><td></td><td></td><td>✓</td></tr>
+<tr><td>server-redis</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>playwright-mcp</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 </table>
+
+<p class="sub">
+Fifteen servers, as published on npm. <strong>An empty cell does not mean the server lacks that
+capability</strong> — it means this regex pass did not find it in a minified build artifact. Read
+the table as "what is visibly there", never as a clean bill of health.
+</p>
 
 <h2>Three things the table says</h2>
 
 <p><strong>1. Credentials live in the config, and that is the ecosystem default.</strong>
-Seven of nine read credentials from the environment. MCP client configs
+Ten of fifteen read credentials from the environment. MCP client configs
 (<code>claude_desktop_config.json</code>, <code>.mcp.json</code>, <code>.vscode/mcp.json</code>) are
 ordinary files: they sync, they end up in dotfiles repos, and they are one command away from being
 listed.</p>
 
 <p><strong>2. Capabilities are granted per server, not per capability.</strong>
-The most capable third-party server here has five of the six families at once — because mounting it
+desktop-commander has five families at once, and <code>mcp-server-kubernetes</code> runs commands
+and writes files while holding your cluster credentials — mounting it grants all of that at once — because mounting it
 grants all five. There is no layer that says &ldquo;read this directory but do not run commands&rdquo;.
 The scope is binary: the server exists, or it does not.</p>
 
