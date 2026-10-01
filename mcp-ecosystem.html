@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nine popular MCP servers, and what they can reach</title>
+<meta name="description" content="I scanned the capability surface of nine popular MCP servers as published on npm. Seven of nine read credentials from the environment; MCP grants capabilities per server, not per capability.">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 44rem; margin: 3.5rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  h1 { font-size: 1.5rem; margin-bottom: .2rem; }
+  p.sub, footer { color: #666; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95rem; }
+  th, td { border-bottom: 1px solid rgba(127,127,127,.3); padding: .35rem .5rem; text-align: left; }
+  th { font-weight: 600; }
+  code { background: rgba(127,127,127,.14); padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  pre { background: rgba(127,127,127,.1); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+  h2 { font-size: 1.15rem; margin-top: 2.2rem; }
+  ul { padding-left: 1.2rem; }
+  a { color: #0969da; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); font-size: .9rem; }
+</style></head><body>
+
+<h1>Nine popular MCP servers, and what they can reach</h1>
+<p class="sub">Measured with <a href="https://github.com/DeviosLang/mcp-surface-scan">mcp-surface-scan</a>,
+against the npm tarballs people actually install. 1 October 2026.</p>
+
+<p>
+Every MCP server runs with your privileges. The thing that declares it is one JSON blob: a package
+name, a few arguments, maybe a URL, maybe a token. Nobody reads it, because it is written as
+arguments. So I read it mechanically — and then read the code behind it.
+</p>
+
+<table>
+<tr><th>server</th><th>run commands</th><th>write files</th><th>read files</th><th>network out</th><th>env credentials</th><th>listens</th></tr>
+<tr><td>desktop-commander 0.2.52</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>server-filesystem</td><td></td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr>
+<tr><td>server-memory</td><td></td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td></tr>
+<tr><td>server-everything</td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>server-github</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>server-slack</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>server-brave-search</td><td></td><td></td><td></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td>server-puppeteer</td><td></td><td></td><td></td><td></td><td>✓</td><td></td></tr>
+</table>
+
+<h2>Three things the table says</h2>
+
+<p><strong>1. Credentials live in the config, and that is the ecosystem default.</strong>
+Seven of nine read credentials from the environment. MCP client configs
+(<code>claude_desktop_config.json</code>, <code>.mcp.json</code>, <code>.vscode/mcp.json</code>) are
+ordinary files: they sync, they end up in dotfiles repos, and they are one command away from being
+listed.</p>
+
+<p><strong>2. Capabilities are granted per server, not per capability.</strong>
+The most capable third-party server here has five of the six families at once — because mounting it
+grants all five. There is no layer that says &ldquo;read this directory but do not run commands&rdquo;.
+The scope is binary: the server exists, or it does not.</p>
+
+<p><strong>3. The broadest server is also the most useful one.</strong>
+That is not a criticism — terminal and filesystem access <em>are</em> the value. The problem is that
+the tradeoff is not shown anywhere. The config says <code>"command": "npx"</code>; nothing in that
+line tells you that you just handed over your shell.</p>
+
+<h2>What to do with this</h2>
+<ul>
+  <li>Make the capability surface visible <em>before</em> mounting (that is what <code>mss</code> does).</li>
+  <li>Name the parts you can actually change: unresolved packages (<code>npx -y</code>), path
+      arguments that mean everything (<code>/</code>), <code>--privileged</code>, plaintext
+      endpoints. Not &ldquo;be careful with third-party servers&rdquo;.</li>
+  <li>Longer term: capability-level authorisation (per directory, per tool, per domain) instead of a
+      per-server on/off switch.</li>
+</ul>
+
+<h2>Reproduce it</h2>
+<pre>pip install mcp-surface-scan
+npm pack @modelcontextprotocol/server-filesystem && tar xzf *.tgz
+mss ./package --source-only</pre>
+
+<p>
+The tool is regex-based on purpose: a reviewer&rsquo;s first pass. It points at places; it never
+claims a specific call is exploitable. Severity is deliberately uneven — &ldquo;runs a local
+process&rdquo; is <code>info</code>, because that is what MCP servers do. The findings are the parts
+you can change.
+</p>
+
+<footer><a href="/">Home</a> · <a href="https://github.com/DeviosLang/mcp-surface-scan">mcp-surface-scan</a></footer>
+</body></html>
