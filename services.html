@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent boundary review — what I do, and what I don't</title>
+<meta name="description" content="A one-scope review of AI coding agent boundaries: git sink coverage, approval-parser differentials, MCP and configuration surfaces. Deliverables, formats, and what is out of scope.">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 44rem; margin: 4rem auto; padding: 0 1.25rem;
+         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+  h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+  h2 { font-size: 1.15rem; margin-top: 2.4rem; }
+  p.sub { color: #666; margin-top: 0; }
+  code { background: rgba(127,127,127,.14); padding: .1rem .35rem; border-radius: 3px; font-size: .92em; }
+  pre { background: rgba(127,127,127,.1); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  a { color: #0969da; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(127,127,127,.3); color: #666; font-size: .9rem; }
+</style></head><body>
+
+<h1>Agent boundary review</h1>
+<p class="sub">One question, asked about your product: where does the thing that enforces the
+boundary take its parameters from?</p>
+
+<p>
+Every serious AI-agent escape of 2026 had the same shape — the agent trusted something the
+repository supplied. The component enforcing the boundary runs in the environment it polices, and
+reads its parameters from untrusted input: a repository, an issue, a patch, a tool result. That
+makes these boundaries testable, and I have tested them on fourteen products.
+</p>
+
+<h2>What the review covers</h2>
+<ul>
+  <li><strong>Git sink coverage</strong> — reproduce your hardening exactly (arguments + environment,
+      from source or the shipped binary) and measure which execution sinks still fire. This is the
+      check most products have, and the one most often incomplete in the same place.</li>
+  <li><strong>Approval-parser differentials</strong> — what the permission layer believes will run
+      vs. what the shell actually runs. Prefix wrappers, shell option flags, quoting, permission
+      derivation from attacker-influenceable paths.</li>
+  <li><strong>Agent configuration surfaces</strong> — MCP server declarations, hooks, permission
+      files, environment channels, devcontainer lifecycle commands, instruction files.</li>
+  <li><strong>Repository-controlled execution surfaces</strong> — everything a directory you did not
+      write gets to say.</li>
+</ul>
+
+<h2>What you get</h2>
+<ul>
+  <li>A report: per finding, the exact command, the A/B pair that proves it, and the fix.</li>
+  <li>The regression tests that keep it closed — I know which test is missing, because I have seen
+      suites that pass while the sink fires.</li>
+  <li>A re-test 30 days later, so a fix that drifted is caught.</li>
+</ul>
+
+<h2>Formats</h2>
+<ul>
+  <li><strong>Single review</strong> — scoped to one product or one surface, 5–10 days.</li>
+  <li><strong>Retainer</strong> — monthly, for teams shipping agent features continuously.</li>
+  <li><strong>Training</strong> — half a day on using coding agents safely, a day on auditing them.
+      Usually pairs with a review: the review finds it, the training stops it recurring.</li>
+</ul>
+<p class="sub">Scope-dependent pricing; a short call first is free and I can usually tell you in
+twenty minutes whether your git path is one of the known gaps.</p>
+
+<h2>What I don't do</h2>
+<ul>
+  <li>Red teaming, network penetration testing, or compliance audits.</li>
+  <li>Model security: jailbreaks, prompt-injection evaluations, safety evals.</li>
+  <li>Anything that needs me to publish something about you.</li>
+</ul>
+<p>
+One scope, done properly, beats a list of services. If your problem is outside it, I will say so in
+the first call.
+</p>
+
+<h2>Contact</h2>
+<p>
+Open an issue on <a href="https://github.com/DeviosLang/agent-boundary-scan">either repo</a>, or
+reach out directly. Findings I come across are reported privately to the vendor first and published
+only after they respond — that applies to reviews too.
+</p>
+
+<footer><a href="/">Home</a> · <a href="/checklist.html">Checklist</a> ·
+<a href="/mcp-ecosystem.html">MCP ecosystem measurement</a></footer>
+</body></html>
