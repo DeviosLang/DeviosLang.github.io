@@ -55,6 +55,13 @@ abs .                     # text report
 abs . --format sarif      # GitHub code scanning
 abs . --fail-on high      # CI gate</pre>
 
+<p>
+<a href="https://github.com/DeviosLang/mcp-surface-scan"><strong>mcp-surface-scan</strong>
+(<code>mss</code>)</a> — read an MCP client config and report what each declared server can reach
+before you mount it: launch-time package resolution, remote endpoints, credentials in
+<code>env</code>, host-reaching container flags, path arguments that mean "everything".
+</p>
+
 <h2>Method notes</h2>
 <ul>
   <li>Every finding is reported with an <strong>A/B pair</strong>: identical payload, only the
